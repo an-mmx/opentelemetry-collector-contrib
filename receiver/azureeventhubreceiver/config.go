@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/Azure/azure-amqp-common-go/v4/conn"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/azurelogs"
 	"go.opentelemetry.io/collector/component"
 )
 
@@ -25,13 +26,14 @@ var (
 )
 
 type Config struct {
-	Connection               string        `mapstructure:"connection"`
-	Partition                string        `mapstructure:"partition"`
-	Offset                   string        `mapstructure:"offset"`
-	StorageID                *component.ID `mapstructure:"storage"`
-	Format                   string        `mapstructure:"format"`
-	ConsumerGroup            string        `mapstructure:"group"`
-	ApplySemanticConventions bool          `mapstructure:"apply_semantic_conventions"`
+	Connection               string                     `mapstructure:"connection"`
+	Partition                string                     `mapstructure:"partition"`
+	Offset                   string                     `mapstructure:"offset"`
+	StorageID                *component.ID              `mapstructure:"storage"`
+	Format                   string                     `mapstructure:"format"`
+	ConsumerGroup            string                     `mapstructure:"group"`
+	ApplySemanticConventions bool                       `mapstructure:"apply_semantic_conventions"`
+	TimeFormat               azurelogs.CustomTimeFormat `mapstructure:"time_format"`
 }
 
 func isValidFormat(format string) bool {

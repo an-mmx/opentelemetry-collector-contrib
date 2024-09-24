@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"strconv"
+	"time"
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/relvacode/iso8601"
@@ -77,9 +78,13 @@ type azureLogRecord struct {
 
 var _ plog.Unmarshaler = (*ResourceLogsUnmarshaler)(nil)
 
+// CustomTimeFormat is a map that associates logs category with the custom time format
+type CustomTimeFormat map[string]string
+
 type ResourceLogsUnmarshaler struct {
-	Version string
-	Logger  *zap.Logger
+	Version    string
+	Logger     *zap.Logger
+	TimeFormat CustomTimeFormat
 }
 
 func (r ResourceLogsUnmarshaler) UnmarshalLogs(buf []byte) (plog.Logs, error) {
@@ -111,7 +116,7 @@ func (r ResourceLogsUnmarshaler) UnmarshalLogs(buf []byte) (plog.Logs, error) {
 
 		for i := 0; i < len(logs); i++ {
 			log := logs[i]
-			nanos, err := getTimestamp(log)
+			nanos, err := getTimestamp(log, r.TimeFormat[log.Category])
 			if err != nil {
 				r.Logger.Warn("Unable to convert timestamp from log", zap.String("timestamp", log.Time))
 				continue
@@ -139,11 +144,11 @@ func (r ResourceLogsUnmarshaler) UnmarshalLogs(buf []byte) (plog.Logs, error) {
 	return l, nil
 }
 
-func getTimestamp(record azureLogRecord) (pcommon.Timestamp, error) {
+func getTimestamp(record azureLogRecord, format string) (pcommon.Timestamp, error) {
 	if record.Time != "" {
-		return asTimestamp(record.Time)
+		return asTimestamp(record.Time, format)
 	} else if record.Timestamp != "" {
-		return asTimestamp(record.Timestamp)
+		return asTimestamp(record.Timestamp, format)
 	}
 
 	return 0, errMissingTimestamp
@@ -152,8 +157,16 @@ func getTimestamp(record azureLogRecord) (pcommon.Timestamp, error) {
 // asTimestamp will parse an ISO8601 string into an OpenTelemetry
 // nanosecond timestamp. If the string cannot be parsed, it will
 // return zero and the error.
-func asTimestamp(s string) (pcommon.Timestamp, error) {
-	t, err := iso8601.ParseString(s)
+func asTimestamp(s, format string) (pcommon.Timestamp, error) {
+	var t time.Time
+	var err error
+
+	if format == "" {
+		t, err = iso8601.ParseString(s)
+	} else {
+		t, err = time.Parse(format, s)
+	}
+
 	if err != nil {
 		return 0, err
 	}

@@ -21,12 +21,13 @@ type AzureResourceLogsEventUnmarshaler struct {
 	unmarshaler logsUnmarshaler
 }
 
-func newAzureResourceLogsUnmarshaler(buildInfo component.BuildInfo, logger *zap.Logger, applySemanticConventions bool) eventLogsUnmarshaler {
-	if applySemanticConventions {
+func newAzureResourceLogsUnmarshaler(buildInfo component.BuildInfo, logger *zap.Logger, receiverConfig *Config) eventLogsUnmarshaler {
+	if receiverConfig.ApplySemanticConventions {
 		return AzureResourceLogsEventUnmarshaler{
 			unmarshaler: &azurelogs.ResourceLogsUnmarshaler{
-				Version: buildInfo.Version,
-				Logger:  logger,
+				Version:    buildInfo.Version,
+				Logger:     logger,
+				TimeFormat: receiverConfig.TimeFormat,
 			},
 		}
 	}
