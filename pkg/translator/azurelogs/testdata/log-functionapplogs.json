@@ -1,0 +1,18 @@
+{
+    "records": [
+        {
+            "properties": "{'appName':'app-name','roleInstance':'role-instance','message':'lorem ipsum message','category':'Host.Function.Console','hostVersion':'4.34.2.2','hostInstanceId':'host-instance-id','level':'Information','levelId':2,'processId':27,'functionInvocationId':'080072f4-6026-496f-87aa-92a7664c0e70','functionName':'FunctionName','eventId':1,'eventName':'FunctionStarted'}",
+            "location": "westus3",
+            "resourceId": "/SUBSCRIPTIONS/DA2DD5CC-E7BC-4DB6-94D9-0AFB3BD30577/RESOURCEGROUPS/FRETBADGER/PROVIDERS/MICROSOFT.WEB/SITES/FBEHTESTAPP",
+            "time": "09/03/2024 10:50:16",
+            "level": "Informational",
+            "category": "FunctionAppLogs",
+            "operationName": "Microsoft.Web/sites/functions/log",
+            "EventStampType": "Stamp",
+            "EventPrimaryStampName": "waws-prod-blu-479",
+            "EventStampName": "waws-prod-blu-479",
+            "Host": "lw0sdlwk0005XR",
+            "EventIpAddress": "10.50.0.34"
+        }
+    ]
+}

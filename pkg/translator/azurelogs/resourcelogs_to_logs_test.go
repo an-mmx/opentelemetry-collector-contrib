@@ -745,3 +745,23 @@ func TestAppServiceIPSecAuditLog(t *testing.T) {
 	assert.Equal(t, "FORWARDED_FOR", record["http.request.header.x-forwarded-for"])
 	assert.Equal(t, "FORWARDED_HOST", record["http.request.header.x-forwarded-host"])
 }
+
+func TestFunctionAppLogs(t *testing.T) {
+	sut := &ResourceLogsUnmarshaler{
+		Version:    testBuildInfo.Version,
+		Logger:     zap.NewNop(),
+		TimeFormat: CustomTimeFormat{"FunctionAppLogs": "01/02/2006 15:04:05"},
+	}
+
+	data, err := os.ReadFile(filepath.Join("testdata", "log-functionapplogs.json"))
+	assert.NoError(t, err, "should read log-functionapplogs.json")
+
+	logs, err := sut.UnmarshalLogs(data)
+	assert.NoError(t, err, "should unmarshal logs")
+
+	record := logs.ResourceLogs().At(0).ScopeLogs().At(0).LogRecords().At(0).Body().Map().AsRaw()
+	assert.Equal(t, "host-instance-id", record[conventions.AttributeHostID])
+	assert.Equal(t, "app-name", record[conventions.AttributeContainerName])
+	assert.Equal(t, "FunctionName", record[conventions.AttributeFaaSName])
+	assert.Equal(t, "FunctionStarted", record["event.name"])
+}

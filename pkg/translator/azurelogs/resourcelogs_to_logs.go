@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"strconv"
+	"strings"
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
@@ -214,10 +215,9 @@ func extractRawAttributes(log azureLogRecord) map[string]any {
 	attrs[azureOperationName] = log.OperationName
 	setIf(attrs, azureOperationVersion, log.OperationVersion)
 
-	if log.Properties != nil {
-		copyPropertiesAndApplySemanticConventions(log.Category, log.Properties, attrs)
+	if properties := extractAzureProperties(log.Properties); properties != nil {
+		copyPropertiesAndApplySemanticConventions(log.Category, properties, attrs)
 	}
-
 	setIf(attrs, azureResultDescription, log.ResultDescription)
 	setIf(attrs, azureResultSignature, log.ResultSignature)
 	setIf(attrs, azureResultType, log.ResultType)
@@ -228,37 +228,46 @@ func extractRawAttributes(log azureLogRecord) map[string]any {
 	return attrs
 }
 
-func copyPropertiesAndApplySemanticConventions(category string, properties *any, attrs map[string]any) {
+func extractAzureProperties(properties *any) *map[string]any {
 	if properties == nil {
-		return
+		return nil
 	}
 
-	// TODO: check if this is a valid JSON string and parse it?
-	switch p := (*properties).(type) {
+	switch val := (*properties).(type) {
+	case string:
+		val = strings.ReplaceAll(val, "'", "\"")
+		var props map[string]any
+		if err := json.Unmarshal([]byte(val), &props); err == nil {
+			return &props
+		}
+
 	case map[string]any:
-		attrsProps := map[string]any{}
+		return &val
+	}
 
-		for k, v := range p {
-			// Check for a complex conversion, e.g. AppServiceHTTPLogs.Protocol
-			if complexConversion, ok := tryGetComplexConversion(category, k); ok {
-				if complexConversion(k, v, attrs) {
-					continue
-				}
-			}
-			// Check for an equivalent Semantic Convention key
-			if otelKey, ok := resourceLogKeyToSemConvKey(k, category); ok {
-				attrs[otelKey] = normalizeValue(otelKey, v)
-			} else {
-				attrsProps[k] = v
+	return nil
+}
+
+func copyPropertiesAndApplySemanticConventions(category string, pmap *map[string]any, attrs map[string]any) {
+	attrsProps := map[string]any{}
+
+	for k, v := range *pmap {
+		// Check for a complex conversion, e.g. AppServiceHTTPLogs.Protocol
+		if complexConversion, ok := tryGetComplexConversion(category, k); ok {
+			if complexConversion(k, v, attrs) {
+				continue
 			}
 		}
-
-		if len(attrsProps) > 0 {
-			attrs[azureProperties] = attrsProps
+		// Check for an equivalent Semantic Convention key
+		if otelKey, ok := resourceLogKeyToSemConvKey(k, category); ok {
+			attrs[otelKey] = normalizeValue(otelKey, v)
+		} else {
+			attrsProps[k] = v
 		}
-	default:
-		// otherwise, just add the properties as-is
-		attrs[azureProperties] = *properties
+	}
+
+	if len(attrsProps) > 0 {
+		attrs[azureProperties] = attrsProps
 	}
 }
 

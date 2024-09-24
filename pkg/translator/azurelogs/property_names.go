@@ -3,6 +3,10 @@
 
 package azurelogs // import "github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/azurelogs"
 
+import (
+	conventions "go.opentelemetry.io/collector/semconv/v1.22.0"
+)
+
 var mappings = map[string]map[string]string{
 	"common": {},
 	"AzureCdnAccessLog": {
@@ -278,6 +282,21 @@ var mappings = map[string]map[string]string{
 		"TenantId":        "", // string	The Log Analytics workspace ID
 		"TimeGenerated":   "", // datetime	The date and time (UTC) this message was created on the node.
 		"Type":            "", // string	The name of the table
+	},
+	"FunctionAppLogs": {
+		"appName":              conventions.AttributeContainerName,
+		"category":             "",
+		"eventId":              "event.id",
+		"eventName":            "event.name",
+		"functionInvocationId": conventions.AttributeFaaSInvocationID,
+		"functionName":         conventions.AttributeFaaSName,
+		"hostInstanceId":       conventions.AttributeHostID,
+		"hostVersion":          conventions.AttributeHostImageVersion,
+		"level":                "",
+		"levelId":              "",
+		"message":              "",
+		"processId":            conventions.AttributeProcessPID,
+		"roleInstance":         "",
 	},
 }
 
